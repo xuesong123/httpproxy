@@ -11,7 +11,6 @@
 package com.skin.app;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 
@@ -31,7 +30,8 @@ public class Options extends Getter
      */
     public Options(String args)
     {
-        this.options = new LinkedHashMap<String, String>();
+        this.options = new HashMap<String, String>();
+
         this.parse(Arguments.parse(args));
     }
 
@@ -223,21 +223,22 @@ public class Options extends Getter
      */
     public String getArguments()
     {
-        StringBuilder buffer = new StringBuilder();
+        StringBuilder buf = new StringBuilder();
 
         for(Map.Entry<String, String> entry: this.options.entrySet())
         {
             String name = entry.getKey();
             String value = entry.getValue();
-            buffer.append("\"").append(name).append(":").append(value).append("\" ");
+
+            buf.append("\"").append(name).append(":").append(value).append("\" ");
         }
 
-        if(buffer.length() > 0)
+        if(buf.length() > 0)
         {
-            buffer.deleteCharAt(buffer.length() - 1);
+            buf.deleteCharAt(buf.length() - 1);
         }
 
-        return buffer.toString();
+        return buf.toString();
     }
 
     /**

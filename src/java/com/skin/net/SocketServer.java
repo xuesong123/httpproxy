@@ -29,7 +29,6 @@ public abstract class SocketServer implements Runnable
     private String host;
     private int port;
     private volatile int state = 0;
-    private int timeout = 5000;
     private ThreadPool threadPool;
 
     protected SocketServer()
@@ -87,22 +86,6 @@ public abstract class SocketServer implements Runnable
     }
 
     /**
-     * @return the timeout
-     */
-    public int getTimeout()
-    {
-        return this.timeout;
-    }
-
-    /**
-     * @param timeout the timeout to set
-     */
-    public void setTimeout(int timeout)
-    {
-        this.timeout = timeout;
-    }
-
-    /**
      * @param String
      */
     public String getServerInfo()
@@ -151,7 +134,7 @@ public abstract class SocketServer implements Runnable
         try
         {
             socketServer = new ServerSocket(this.getPort());
-            socketServer.setSoTimeout(this.getTimeout());
+            socketServer.setSoTimeout(10000);
 
             while(this.state == 1)
             {
@@ -165,7 +148,7 @@ public abstract class SocketServer implements Runnable
                 }
             }
 
-            System.out.println("Server Stopped !");
+            System.out.println("Server Stopping... ");
         }
         catch(IOException e)
         {

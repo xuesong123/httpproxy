@@ -131,11 +131,11 @@ public class Main
             {
                 try
                 {
-                    System.out.println("Server Stopping ...");
+                    System.out.println("Server Stop ...");
                     server.stop();
-                    System.out.println("ThreadPool Stopping ...");
+                    System.out.println("ThreadPool Stop ...");
                     threadPool.shutdown();
-                    System.out.println("ThreadPool Stopped !");
+                    System.out.println("ThreadPool Stoped !");
                 }
                 catch(Exception e)
                 {

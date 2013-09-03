@@ -13,6 +13,9 @@ package com.skin.taurus.http.io;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.skin.taurus.http.HttpRequest;
+
+
 /**
  * <p>Title: HttpServletInputStream</p> 
  * <p>Description: </p> 
@@ -21,14 +24,16 @@ import java.io.InputStream;
  */
 public class HttpInputStream extends InputStream
 {
+    private HttpRequest request;
     private InputStream inputStream;
     private long contentLength;
     private long readedByts = 0;
 
-    public HttpInputStream(InputStream inputStream, long contentLength)
+    public HttpInputStream(HttpRequest request, InputStream inputStream)
     {
+        this.request = request;
         this.inputStream = inputStream;
-        this.contentLength = contentLength;
+        this.contentLength = request.getContentLength();
     }
 
     /**
@@ -40,7 +45,9 @@ public class HttpInputStream extends InputStream
     }
 
     /**
+     * 
      * @see java.io.InputStream#close()
+     * 
      */
     public void close() throws IOException
     {
@@ -118,7 +125,7 @@ public class HttpInputStream extends InputStream
     }
 
     /**
-     * @param contentLength
+     * @param contentLength 
      */
     public void setContentLength(long contentLength)
     {
@@ -162,6 +169,11 @@ public class HttpInputStream extends InputStream
         len = this.inputStream.read(bytes, off, len);
         this.readedByts += len;
         return len;
+    }
+
+    public HttpRequest getHttpRequest()
+    {
+        return this.request;
     }
     
     public InputStream getInputStream()
