@@ -358,7 +358,6 @@ public class CommandLine
     public int dump(String[] args)
     {
         System.out.println(this.toString("dump", args, true));
-
         return 0;
     }
 
@@ -370,7 +369,6 @@ public class CommandLine
     public int dump(String[] args, boolean quote)
     {
         System.out.println(this.toString("dump", args, quote));
-
         return 0;
     }
 
@@ -382,7 +380,6 @@ public class CommandLine
     public int dump(String cmd, String[] args)
     {
         System.out.println(this.toString(cmd, args, true));
-
         return 0;
     }
     
@@ -395,7 +392,6 @@ public class CommandLine
     public int dump(String cmd, String[] args, boolean quote)
     {
         System.out.println(this.toString(cmd, args, quote));
-
         return 0;
     }
 
@@ -470,7 +466,6 @@ public class CommandLine
         }
         
         System.out.println();
-
         return 0;
     }
     
@@ -506,7 +501,6 @@ public class CommandLine
         }
 
         this.state = -1;
-
         return this.exit(temp);
     }
 
@@ -517,7 +511,6 @@ public class CommandLine
     public int exit(String[] args)
     {
         this.state = -1;
-        
         return 0;
     }
 
@@ -559,7 +552,6 @@ public class CommandLine
     public static Object invoke(Object object, String arguments) throws SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         String[] args = Arguments.parse(arguments);
-
         return CommandLine.invoke(object, args);
     }
 
@@ -582,9 +574,7 @@ public class CommandLine
             if(name != null && (name = name.trim()).length() > 0)
             {
                 Class<?> type = object.getClass();
-
                 Method method = type.getMethod(name, new Class<?>[]{String[].class});
-
                 String[] tmp = new String[args.length - 1];
 
                 if(tmp.length > 0)
@@ -593,9 +583,7 @@ public class CommandLine
                 }
 
                 method.setAccessible(true);
-
                 Object value = method.invoke(object, new Object[]{tmp});
-
                 return value;
             }
         }
@@ -623,7 +611,6 @@ public class CommandLine
             try
             {
                 char c = s.charAt(0);
-
                 return new Character(c);
             }
             catch(NumberFormatException e)
@@ -654,7 +641,6 @@ public class CommandLine
             try
             {
                 boolean b = (s != null) && (s.equals("true") || s.equals("on") || s.equals("1"));
-
                 return new Boolean(b);
             }
             catch(NumberFormatException e)
@@ -686,7 +672,6 @@ public class CommandLine
             try
             {
                 byte b = Byte.parseByte(s);
-
                 return new Byte(b);
             }
             catch(NumberFormatException e)

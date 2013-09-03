@@ -177,11 +177,12 @@ public abstract class Httpd implements Runnable
                     buffer.append(" \"");
                     buffer.append((request.getHeader("Referer") != null ? request.getHeader("Referer") : ""));
                     buffer.append("\"");
-                    
+
                     buffer.append(" \"");
                     buffer.append((request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : ""));
                     buffer.append("\"");
                     accesslogger.info(buffer.toString());
+                    // System.out.println(request.getMethod() + " " + request.getOriginalURL());
                 }
 
                 if(socket.isClosed())
