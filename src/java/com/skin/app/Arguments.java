@@ -203,7 +203,6 @@ public class Arguments
                         try
                         {
                             Integer value = Integer.parseInt(hex, 16);
-
                             buf.append((char)(value.intValue()));
                         }
                         catch(NumberFormatException e)

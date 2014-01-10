@@ -42,3 +42,4 @@ GOTO :EOF
 :end
 
 @REM pause
+@REM cmd /k

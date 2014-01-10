@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -23,10 +24,13 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import javax.servlet.ServletException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.skin.taurus.annotation.Namespace;
+import com.skin.taurus.annotation.UrlPattern;
 import com.skin.taurus.http.HttpRequest;
 import com.skin.taurus.http.HttpResponse;
 
@@ -39,12 +43,12 @@ import com.skin.taurus.http.HttpResponse;
  */
 public class DispatchServlet extends HttpServlet
 {
-    private static final Class<Servlet> SERVLET = Servlet.class;
     private static final Class<DispatchServlet> MODEL = DispatchServlet.class;
+    private static final Class<Servlet> SERVLET = Servlet.class;
     private static final Logger logger = LoggerFactory.getLogger(MODEL);
 
     private String packages = null;
-    private Map<String, String> actionsMap = null;
+    private Map<String, Method> actionsMap = null;
     private ClassLoader classLoader = null;
     private String contextPath = null;
 
@@ -106,6 +110,7 @@ public class DispatchServlet extends HttpServlet
     protected void dispatch(HttpRequest request, HttpResponse response) throws IOException
     {
         String requestURI = request.getRequestURI();
+        // request.setAttribute("DispatchFilter$requestURI", requestURI);
 
         if(this.contextPath.length() > 0)
         {
@@ -113,67 +118,56 @@ public class DispatchServlet extends HttpServlet
         }
 
         requestURI = this.replace(requestURI, "//", "/");
+        Method method = this.getMethod(requestURI);
+
+        if(method == null)
+        {
+            this.sendError(request, response, 404, null);
+            return;
+        }
 
         if(logger.isDebugEnabled())
         {
-            logger.debug("requestURI: " + requestURI);
+            logger.debug("requestURI: " + requestURI + ", dispatch: " + method.getDeclaringClass().getName() + "." + method.getName() + "()");
         }
 
-        String className = this.getServletName(requestURI);
-        String methodName = this.getServletMethod(requestURI);
-
-        if(logger.isDebugEnabled())
-        {
-            logger.debug("dispatch: " + className + "." + methodName + "()");
-        }
-
+        int status = 500;
         Servlet servlet = null;
         Throwable throwable = null;
 
         try
         {
-            if(className == null)
-            {
-                this.sendError(request, response);
-                return;
-            }
-
-            Class<?> type = this.getServletClass(className);
+            Class<?> type = method.getDeclaringClass();
 
             if(type == null)
             {
-                this.sendError(request, response);
-                return;
+                status = 404;
+                throw new ServletException("There is no Action mapped for url " + requestURI);
             }
 
             servlet = this.getServletInstance(type);
 
             if(servlet == null)
             {
-                this.sendError(request, response);
-                return;
+                status = 404;
+                throw new ServletException("There is no Servlet mapped for url " + requestURI);
             }
 
-            servlet.setServletContext(this.getServletContext());
-            servlet.init();
+            // action.setServletContext(this.servletContext);
+            // servlet.setRequest(request);
+            // servlet.setResponse(response);
+            // servlet.init();
 
-            methodName = java.beans.Introspector.decapitalize(methodName);
-            Method method = type.getMethod(methodName, new Class[]{HttpRequest.class, HttpResponse.class});
+            long t1 = System.currentTimeMillis();
+            method.invoke(servlet, new Object[]{request, response});
+            long t2 = System.currentTimeMillis();
 
-            if(java.lang.reflect.Modifier.isPublic(method.getModifiers()))
+            if(logger.isDebugEnabled())
             {
-                method.invoke(servlet, new Object[]{request, response});
-            }
-            else
-            {
-                throw new NoSuchMethodException("Can't Access 'private' or 'protected' method !");
+                logger.debug("execute time: " + (t2 - t1) + " - " + requestURI);
             }
         }
         catch(SecurityException e)
-        {
-            throwable = e;
-        }
-        catch(NoSuchMethodException e)
         {
             throwable = e;
         }
@@ -211,56 +205,30 @@ public class DispatchServlet extends HttpServlet
         if(throwable != null)
         {
             Throwable t = throwable.getCause();
-            
+
             if(t != null)
             {
                 throwable = t;
             }
             throwable.printStackTrace();
-            this.sendError(request, response);
+            this.sendError(request, response, status, new ServletException(throwable));
         }
     }
 
-    
-    
     /**
      * @param requestURI
-     * @return String
+     * @return Method
      */
-    public String getServletName(String requestURI)
+    public Method getMethod(String requestURI)
     {
-        String className = null;
-        int k = requestURI.lastIndexOf(".");
-
-        if(k > -1)
-        {
-            String url = requestURI.substring(0, k);
-            className = this.actionsMap.get(url);
-        }
-        else
-        {
-            className = this.actionsMap.get(requestURI);
-        }
-
-        if(className == null)
-        {
-            k = requestURI.lastIndexOf("/");
-
-            if(k > -1)
-            {
-                String url = requestURI.substring(0, k);
-                className = this.actionsMap.get(url);
-            }
-        }
-
-        return className;
+        return this.actionsMap.get(requestURI);
     }
 
     /**
      * @param className
      * @return Class<?>
      */
-    public Class<?> getServletClass(String className)
+    public Class<?> getActionClass(String className)
     {
         Class<?> clazz = null;
 
@@ -307,7 +275,8 @@ public class DispatchServlet extends HttpServlet
         {
             try
             {
-                return (Servlet)(type.newInstance());
+                Servlet servlet = (Servlet)(type.newInstance());
+                return servlet;
             }
             catch(InstantiationException e)
             {
@@ -318,56 +287,6 @@ public class DispatchServlet extends HttpServlet
         }
 
         return null;
-    }
-
-    /**
-     * @param requestURI
-     * @return String
-     */
-    public String getServletMethod(String requestURI)
-    {
-        int k = requestURI.lastIndexOf(".");
-
-        String className = null;
-
-        if(k > -1)
-        {
-            String url = requestURI.substring(0, k);
-            className = this.actionsMap.get(url);
-        }
-        else
-        {
-            className = this.actionsMap.get(requestURI);
-        }
-
-        if(className != null)
-        {
-            return "execute";
-        }
-
-        String methodName = null;
-        k = requestURI.lastIndexOf("/");
-
-        if(k > -1)
-        {
-            methodName = requestURI.substring(k + 1);
-        }
-
-        if(methodName != null && (methodName = methodName.trim()).length() > 0)
-        {
-            k = methodName.indexOf(".");
-
-            if(k > -1)
-            {
-                methodName = methodName.substring(0, k);
-            }
-        }
-        else
-        {
-            methodName = "execute";
-        }
-
-        return methodName;
     }
 
     /**
@@ -406,7 +325,7 @@ public class DispatchServlet extends HttpServlet
      */
     public void initActionMap()
     {
-        this.actionsMap = new HashMap<String, String>();
+        this.actionsMap = new HashMap<String, Method>();
 
         if(packages != null)
         {
@@ -422,20 +341,6 @@ public class DispatchServlet extends HttpServlet
                 this.findInPackage(names[i]);
             }
         }
-    }
-
-    /**
-     * @param urlPattern
-     * @param className
-     */
-    public void setAction(String urlPattern, String className)
-    {
-        if(this.actionsMap == null)
-        {
-            this.actionsMap = new HashMap<String, String>();
-        }
-
-        this.actionsMap.put(urlPattern, className);
     }
 
     /**
@@ -591,6 +496,16 @@ public class DispatchServlet extends HttpServlet
             String externalName = fqn.substring(0, fqn.indexOf('.')).replace('/', '.');
             Class<?> type = getClassLoader().loadClass(externalName);
 
+            if(Modifier.isAbstract(type.getModifiers()))
+            {
+                return;
+            }
+
+            if(Modifier.isInterface(type.getModifiers()))
+            {
+                return;
+            }
+
             if(SERVLET.isAssignableFrom(type))
             {
                 Namespace namespace = type.getAnnotation(Namespace.class);
@@ -599,27 +514,35 @@ public class DispatchServlet extends HttpServlet
                 {
                     path = namespace.value();
                 }
-            }
 
-            if(path != null)
-            {
-                path = path.trim().replace('\\', '/');
-
-                if(path.charAt(0) != '/')
+                if(path == null)
                 {
-                    path = "/" + path;
+                    path = "";
                 }
 
-                if(path.endsWith("/"))
-                {
-                    path = path.substring(0, path.length() - 1);
-                }
+                Method[] methods = type.getMethods();
 
-                this.actionsMap.put(path, type.getName());
-
-                if(logger.isInfoEnabled())
+                for(Method method : methods)
                 {
-                    logger.info("Load Action: " + path + ", Path: " + type.getName());
+                    if(Modifier.isPublic(method.getModifiers()))
+                    {
+                        UrlPattern urlPattern = method.getAnnotation(UrlPattern.class);
+
+                        if(urlPattern != null)
+                        {
+                            if(this.actionsMap.get(urlPattern.value()) != null)
+                            {
+                                throw new RuntimeException(urlPattern.value() + " exists !");
+                            }
+
+                            this.actionsMap.put(urlPattern.value(), method);
+
+                            if(logger.isDebugEnabled())
+                            {
+                                logger.debug(urlPattern.value() + " - " + method.getDeclaringClass().getName() + "." + method.getName() + "()");
+                            }
+                        }
+                    }
                 }
             }
             else
@@ -679,16 +602,17 @@ public class DispatchServlet extends HttpServlet
 
         return buffer.toString();
     }
-    
+
     /**
      */
     public void debug()
     {
         if(logger.isDebugEnabled())
         {
-            for(Map.Entry<String, String> entry : this.actionsMap.entrySet())
+            for(Map.Entry<String, Method> entry : this.actionsMap.entrySet())
             {
-                logger.debug("ActionMapping: " + entry.getKey() + ", Path: " + entry.getValue());
+                Method method = entry.getValue();
+                logger.debug("ActionMapping: " + entry.getKey() + " - " + method.getDeclaringClass().getName() + "." + method.getName() + "()");
             }
         }
     }
@@ -700,12 +624,19 @@ public class DispatchServlet extends HttpServlet
      * @param throwable
      * @throws IOException
      */
-    public void sendError(HttpRequest request, HttpResponse response) throws IOException
+    public void sendError(HttpRequest request, HttpResponse response, int code, Throwable throwable) throws IOException
     {
-        response.setStatus(500);
-        response.setReasonPhrase("Internal Server Error");
+        if(code == 500)
+        {
+            // request.setAttribute("javax.servlet.error.message", throwable.getMessage());
+            // request.setAttribute("javax.servlet.error.exception", throwable.getCause());
+            // request.setAttribute("javax.servlet.jsp.jspException", throwable.getCause());
+        }
+
+        // response.sendError(500);
     }
 
+    @Override
     public void destroy()
     {
         this.packages = null;

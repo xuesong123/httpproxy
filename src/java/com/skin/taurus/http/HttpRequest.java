@@ -126,6 +126,16 @@ public class HttpRequest
             this.httpHeader.remove(name);
         }
     }
+    
+    /**
+     * @param name
+     * @param newName
+     * @param value
+     */
+    public void replaceHeader(String name, String newName, String value)
+    {
+        this.httpHeader.replace(name, newName, value);
+    }
 
     /**
      * @param name
@@ -294,7 +304,7 @@ public class HttpRequest
      */
     public String getRequestURL()
     {
-        return requestURL;
+        return this.requestURL;
     }
 
     /**
@@ -468,6 +478,44 @@ public class HttpRequest
     public void setOutputStream(OutputStream outputStream)
     {
         this.outputStream = outputStream;
+    }
+
+    /**
+     * @see java.lang.Object#toString()
+     */
+    public String getHttpHeaders()
+    {
+        String url = this.getOriginalURL();
+
+        if(url.startsWith("http://"))
+        {
+            url = url.substring(7);
+
+            int k = url.indexOf("/");
+
+            if(k > -1)
+            {
+                url = url.substring(k);
+            }
+        }
+        else if(url.startsWith("https://"))
+        {
+            url = url.substring(8);
+
+            int k = url.indexOf("/");
+
+            if(k > -1)
+            {
+                url = url.substring(k);
+            }
+        }
+
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(this.method).append(" ").append(url);
+        buffer.append(" ").append(this.getHttpProtocol()).append("\r\n");
+        buffer.append(this.httpHeader.toString());
+        buffer.append("\r\n");
+        return buffer.toString();
     }
 
     /**

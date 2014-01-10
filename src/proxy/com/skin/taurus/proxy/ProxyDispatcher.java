@@ -73,7 +73,6 @@ public class ProxyDispatcher
             socket.setKeepAlive(false);
             InputStream socketInputStream = socket.getInputStream();
             OutputStream socketOutputStream = socket.getOutputStream();
-            String requestHeaders = request.toString();
             String requestURL = request.getRequestURL();
 
             if(requestURL.indexOf("cloudquery.php") > -1)
@@ -87,8 +86,8 @@ public class ProxyDispatcher
 
             if(flag == false)
             {
-                requestURL = this.removeReferer(request.getRequestURL());
-                request.setRequestURL(requestURL);
+                String originalURL = this.removeReferer(request.getOriginalURL());
+                request.setOriginalURL(originalURL);
                 request.removeHeader("Cookie");
                 request.removeHeader("Referer");
                 request.setHeader("User-Agent", "Nyi1lb/X.0 (Wind0ws 1.0) App1eWebK1t/5X7.X2 (KHLML, l1ke Geck0) Chr0me/2X.0.1X64.1X2 Sfaari/5X7.2X");
@@ -103,7 +102,8 @@ public class ProxyDispatcher
 
                 if(request.getHeader("Proxy-Connection") != null)
                 {
-                    request.setHeader("Proxy-Connection", "Close");
+                    request.removeHeader("Proxy-Connection");
+                    request.setHeader("Connection", "Close");
                 }
 
                 this.request(request, socketOutputStream);
@@ -130,7 +130,11 @@ public class ProxyDispatcher
 
                 if(logger.isDebugEnabled())
                 {
-                    logger.debug("\r\n" + requestHeaders + "\r\n--- ResponeHeader ---\r\n" + httpResponse.toString());
+                    logger.debug("\r\n"
+                            + request.getOriginalURL() + "\r\n"
+                            + request.getHttpHeaders() + "\r\n"
+                            + "--- ResponeHeader ---\r\n"
+                            + httpResponse.toString());
                 }
             }
         }
@@ -168,14 +172,14 @@ public class ProxyDispatcher
         if(useXForwardedFor)
         {
             String xForwardedFor = request.getHeader("X-Forwarded-For");
-    
+
             if(xForwardedFor == null)
             {
                 xForwardedFor = host;
             }
             else
             {
-                xForwardedFor = "," + host;
+                xForwardedFor = xForwardedFor + ", " + host;
             }
 
             // local: not set http_client_ip 
@@ -183,10 +187,10 @@ public class ProxyDispatcher
             request.setHeader("X-Forwarded-For", xForwardedFor);
         }
 
-        String headers = request.toString();
-        outputStream.write(headers.getBytes());
-        outputStream.flush();
+        String headers = request.getHttpHeaders();
+        outputStream.write(headers.getBytes("UTF-8"));
         HttpStream.pipe(request.getInputStream(), outputStream, request.getContentLength());
+        outputStream.flush();
     }
 
     /**
@@ -207,7 +211,7 @@ public class ProxyDispatcher
     private void resonse(HttpRequest request, HttpResponse response, OutputStream outputStream) throws IOException
     {
         String headers = response.toString();
-        outputStream.write(headers.getBytes());
+        outputStream.write(headers.getBytes("UTF-8"));
         outputStream.flush();
 
         int status = response.getStatus();

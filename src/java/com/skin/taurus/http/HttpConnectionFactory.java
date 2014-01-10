@@ -77,8 +77,8 @@ public class HttpConnectionFactory
 
         httpConnection.setKeepAlive(keepAlive);
         socket.setKeepAlive(keepAlive);
-        response.setHeader("ThreadName", Thread.currentThread().getName());
-        response.addHeader("Connection", (keepAlive ? "Keep-Alive" : "Close")); // ? Proxy-Connection
+        // response.setHeader("ThreadName", Thread.currentThread().getName());
+        // response.addHeader("Connection", (keepAlive ? "Keep-Alive" : "Close")); // ? Proxy-Connection
         return httpConnection;
     }
 

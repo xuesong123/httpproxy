@@ -75,7 +75,30 @@ public class HttpHeader implements java.lang.Cloneable
             this.remove(name);
         }
     }
-    
+
+    /**
+     * @param name
+     * @param newName
+     * @param value
+     */
+    public void replace(String name, String newName, String value)
+    {
+        HeaderEntry entry = this.getHeaderEntry(name);
+
+        if(entry != null)
+        {
+            this.headers.remove(entry);
+            entry.setName(newName);
+            entry.setValue(value, false);
+            this.headers.put(newName.toLowerCase(), entry);
+        }
+        else
+        {
+            entry = new HeaderEntry(name, new String[]{value});
+            this.headers.put(name.toLowerCase(), entry);
+        }
+    }
+
     /**
      * @param name
      * @return String

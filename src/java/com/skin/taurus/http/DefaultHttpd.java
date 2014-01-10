@@ -127,6 +127,11 @@ public class DefaultHttpd extends Httpd
 
                     if(contentType.toLowerCase().equals("application/x-www-form-urlencoded"))
                     {
+                        if(contentLength > 1024 * 1024 * 20)
+                        {
+                            throw new IOException("too much form data!");
+                        }
+
                         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(contentLength);
                         InputStream inputStream = request.getInputStream();
                         IO.copy(inputStream, outputStream);

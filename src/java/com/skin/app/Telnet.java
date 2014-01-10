@@ -154,9 +154,7 @@ public class Telnet extends CommandLine
 			}
 
 			Telnet telnet = new Telnet(host, port);
-			
 			telnet.connect();
-			
 			return telnet;
 		}
 
@@ -178,7 +176,6 @@ public class Telnet extends CommandLine
 			this.outputStream = socket.getOutputStream();
 
 			this.socket.setKeepAlive(true);
-
 			this.state = 1;
 		}
 		catch(IOException e)
@@ -204,17 +201,14 @@ public class Telnet extends CommandLine
 	        }
 
 	        String data = this.toString(args, false);
-	        
     		this.outputStream.write(data.getBytes("UTF-8"));
     		this.outputStream.write("\r\n\r\n".getBytes("UTF-8"));
     		this.outputStream.flush();
-    		
     		this.read();
 		}
 		catch(IOException e)
 		{
 		    System.out.println(e.getMessage());
-
 		    this.exit();
 		}
 	}
@@ -232,10 +226,8 @@ public class Telnet extends CommandLine
 		}
 
 		String data = this.toString(cmd, args, false);
-
 		this.outputStream.write(data.getBytes("UTF-8"));
 		this.outputStream.flush();
-
 		this.read();
 	}
 
@@ -282,7 +274,6 @@ public class Telnet extends CommandLine
 		if(this.socket.isClosed())
 		{
 		    System.out.println("connect is closed !");
-		    
 		    this.exit();
 		}
 	}

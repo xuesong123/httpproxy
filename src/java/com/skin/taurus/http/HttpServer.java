@@ -61,7 +61,7 @@ public class HttpServer extends SocketServer
     {
         return this.serviceFactory;
     }
-    
+
     @Override
     public void stop()
     {

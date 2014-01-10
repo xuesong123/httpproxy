@@ -121,7 +121,6 @@ public abstract class Httpd implements Runnable
                 }
 
                 keepAlive = httpConnection.isKeeyAlive();
-
                 socket.setSoTimeout(30000);
                 socket.setKeepAlive(keepAlive);
                 request = httpConnection.getRequest();
@@ -137,14 +136,14 @@ public abstract class Httpd implements Runnable
                     }
                 }
 
-                if(request.getMethod() == null || request.getRequestURL() == null)
+                if(request.getMethod() == null || request.getOriginalURL() == null)
                 {
                     continue;
                 }
 
                 try
                 {
-                    response.setHeader("Server", "Httpd/1.1");
+                    // response.setHeader("Server", "Httpd/1.1");
                     this.service(request, response);
                 }
                 catch(SocketException e)
@@ -158,11 +157,9 @@ public abstract class Httpd implements Runnable
                 if(accesslogger.isInfoEnabled())
                 {
                     long t2 = System.currentTimeMillis();
-
-                    buffer.setLength(0);
                     buffer.append((t2 - t1));
                     buffer.append(" \"");
-                    buffer.append((request.getMethod() != null ? request.getMethod() : ""));
+                    buffer.append(request.getMethod());
                     buffer.append(" ");
                     buffer.append(request.getOriginalURL());
                     buffer.append(" ");
@@ -173,16 +170,14 @@ public abstract class Httpd implements Runnable
                     buffer.append(request.getContentLength());
                     buffer.append(" ");
                     buffer.append(response.getContentLength());
-
                     buffer.append(" \"");
-                    buffer.append((request.getHeader("Referer") != null ? request.getHeader("Referer") : ""));
+                    buffer.append((request.getHeader("Referer") != null ? request.getHeader("Referer") : "-"));
                     buffer.append("\"");
-
                     buffer.append(" \"");
-                    buffer.append((request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : ""));
+                    buffer.append((request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : "-"));
                     buffer.append("\"");
                     accesslogger.info(buffer.toString());
-                    // System.out.println(request.getMethod() + " " + request.getOriginalURL());
+                    buffer.setLength(0);
                 }
 
                 if(socket.isClosed())
