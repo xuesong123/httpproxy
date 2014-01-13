@@ -56,8 +56,9 @@ public class ProxyDispatcher
      */
     public void dispatch(HttpRequest request, HttpResponse response, ProxyHost proxyHost)
     {
-        String host = request.getRequestHost();
         Socket socket = null;
+        String host = request.getRequestHost();
+        System.out.println(request.getMethod() + " " + request.getOriginalURL());
 
         try
         {
